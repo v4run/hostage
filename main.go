@@ -1,14 +1,23 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/v4run/hostage/internal/tui"
+	"github.com/v4run/hostage/internal/version"
 )
 
 func main() {
+	ver := flag.Bool("version", false, "print version and exit")
+	flag.Parse()
+	if *ver {
+		fmt.Println("hostage", version.Version)
+		return
+	}
+
 	m, err := tui.New("/etc/hosts")
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
