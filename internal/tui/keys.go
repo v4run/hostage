@@ -1,1 +1,253 @@
 package tui
+
+import (
+	"net"
+	"os"
+	"strings"
+
+	"github.com/charmbracelet/bubbles/textinput"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/v4run/hostage/internal/hosts"
+)
+
+func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+		m.filterInput.Width = m.width - 10
+		m.ipInput.Width = 20
+		m.hostnameInput.Width = 40
+		return m, nil
+	case tea.KeyMsg:
+		return m.handleKey(msg)
+	}
+	return m, nil
+}
+
+func (m *Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	key := msg.String()
+	switch m.mode {
+	case modeBrowsing:
+		return m.handleBrowsing(key)
+	case modeFiltering:
+		return m.handleFiltering(msg)
+	case modeAdding:
+		return m.handleAdding(msg)
+	case modeConfirmingDelete:
+		return m.handleConfirmDelete(key)
+	case modeScratch:
+		if key == "esc" {
+			m.mode = modeBrowsing
+			m.scratchLines = nil
+		}
+	}
+	return m, nil
+}
+
+func (m *Model) handleBrowsing(key string) (tea.Model, tea.Cmd) {
+	switch key {
+	case "q", "ctrl+c":
+		return m, tea.Quit
+	case "up", "k":
+		if m.cursor > 0 {
+			m.cursor--
+		}
+		m.lastKey = ""
+	case "down", "j":
+		if m.cursor < len(m.filtered)-1 {
+			m.cursor++
+		}
+		m.lastKey = ""
+	case "g":
+		if m.lastKey == "g" {
+			m.cursor = 0
+			m.lastKey = ""
+		} else {
+			m.lastKey = "g"
+		}
+	case "G":
+		m.cursor = max(0, len(m.filtered)-1)
+		m.lastKey = ""
+	case " ":
+		m.toggleCurrent()
+		m.lastKey = ""
+	case "a", "i":
+		m.openAddForm()
+		m.lastKey = ""
+	case "d", "x":
+		if len(m.filtered) > 0 {
+			m.mode = modeConfirmingDelete
+		}
+		m.lastKey = ""
+	case "/":
+		m.mode = modeFiltering
+		m.filterInput.Focus()
+		m.lastKey = ""
+	default:
+		m.lastKey = ""
+	}
+	m.statusMsg = ""
+	return m, nil
+}
+
+func (m *Model) handleFiltering(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "esc", "enter":
+		m.mode = modeBrowsing
+		m.filterInput.Blur()
+		m.filter = m.filterInput.Value()
+		m.rebuildFiltered()
+		return m, nil
+	}
+	var cmd tea.Cmd
+	m.filterInput, cmd = m.filterInput.Update(msg)
+	m.filter = m.filterInput.Value()
+	m.rebuildFiltered()
+	return m, cmd
+}
+
+func (m *Model) handleAdding(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "esc":
+		m.mode = modeBrowsing
+		m.resetAddForm()
+		return m, nil
+	case "tab":
+		if m.addFocus == addFieldIP {
+			m.addFocus = addFieldHostname
+			m.ipInput.Blur()
+			m.hostnameInput.Focus()
+		} else {
+			m.addFocus = addFieldIP
+			m.hostnameInput.Blur()
+			m.ipInput.Focus()
+		}
+		return m, nil
+	case "enter":
+		return m.submitAddForm()
+	}
+	var cmd tea.Cmd
+	if m.addFocus == addFieldIP {
+		m.ipInput, cmd = m.ipInput.Update(msg)
+	} else {
+		m.hostnameInput, cmd = m.hostnameInput.Update(msg)
+	}
+	return m, cmd
+}
+
+func (m *Model) handleConfirmDelete(key string) (tea.Model, tea.Cmd) {
+	switch key {
+	case "y", "Y":
+		m.deleteCurrent()
+		m.mode = modeBrowsing
+	case "n", "N", "esc":
+		m.mode = modeBrowsing
+	}
+	return m, nil
+}
+
+func (m *Model) toggleCurrent() {
+	if len(m.filtered) == 0 {
+		return
+	}
+	idx := m.filtered[m.cursor]
+	l := &m.lines[idx]
+	if l.Type == hosts.LineEntry {
+		l.Type = hosts.LineDisabled
+	} else if l.Type == hosts.LineDisabled {
+		l.Type = hosts.LineEntry
+	}
+	if err := m.save(); err != nil {
+		m.statusMsg = "Error: " + err.Error()
+	}
+}
+
+func (m *Model) deleteCurrent() {
+	if len(m.filtered) == 0 {
+		return
+	}
+	idx := m.filtered[m.cursor]
+	m.lines = append(m.lines[:idx], m.lines[idx+1:]...)
+	m.rebuildFiltered()
+	if err := m.save(); err != nil {
+		m.statusMsg = "Error: " + err.Error()
+	}
+}
+
+func (m *Model) openAddForm() {
+	m.resetAddForm()
+	m.mode = modeAdding
+	m.addFocus = addFieldIP
+	m.ipInput.Focus()
+}
+
+func (m *Model) resetAddForm() {
+	m.ipInput.SetValue("")
+	m.hostnameInput.SetValue("")
+	m.ipInput.Blur()
+	m.hostnameInput.Blur()
+	m.addErr = ""
+	m.addFocus = addFieldIP
+}
+
+func (m *Model) submitAddForm() (tea.Model, tea.Cmd) {
+	ip := strings.TrimSpace(m.ipInput.Value())
+	hn := strings.TrimSpace(m.hostnameInput.Value())
+
+	if net.ParseIP(ip) == nil {
+		m.addErr = "Invalid IP address"
+		return m, nil
+	}
+	if hn == "" {
+		m.addErr = "Hostname cannot be empty"
+		return m, nil
+	}
+
+	newLine := hosts.Line{
+		Type:      hosts.LineEntry,
+		IP:        ip,
+		Hostnames: []string{hn},
+	}
+	m.lines = append(m.lines, newLine)
+	m.rebuildFiltered()
+	m.cursor = len(m.filtered) - 1
+
+	if err := m.save(); err != nil {
+		m.statusMsg = "Error: " + err.Error()
+	}
+
+	m.mode = modeBrowsing
+	m.resetAddForm()
+	return m, nil
+}
+
+func (m *Model) save() error {
+	err := hosts.Write(m.path, m.lines, m.mtime)
+	if err == hosts.ErrConflict {
+		scratch := m.visibleLines()
+		rawBytes, readErr := os.ReadFile(m.path)
+		if readErr != nil {
+			return readErr
+		}
+		newMtime, _ := hosts.ReadMtime(m.path)
+		m.lines = hosts.Parse(string(rawBytes))
+		m.mtime = newMtime
+		m.rebuildFiltered()
+		m.scratchLines = scratch
+		m.mode = modeScratch
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	newMtime, err := hosts.ReadMtime(m.path)
+	if err != nil {
+		return err
+	}
+	m.mtime = newMtime
+	return nil
+}
+
+// Ensure textinput import is used (referenced via Update calls above).
+var _ = textinput.New

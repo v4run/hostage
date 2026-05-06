@@ -15,3 +15,50 @@ func (m *Model) SetFilter(q string) {
 	m.rebuildFiltered()
 }
 func (m *Model) SetCursor(i int) { m.cursor = i }
+
+func (m *Model) ToggleCurrentForTest() {
+	if len(m.filtered) == 0 {
+		return
+	}
+	idx := m.filtered[m.cursor]
+	l := &m.lines[idx]
+	if l.Type == hosts.LineEntry {
+		l.Type = hosts.LineDisabled
+	} else if l.Type == hosts.LineDisabled {
+		l.Type = hosts.LineEntry
+	}
+	// skip save() — no path set in test models
+}
+
+func (m *Model) DeleteCurrentForTest() {
+	if len(m.filtered) == 0 {
+		return
+	}
+	idx := m.filtered[m.cursor]
+	m.lines = append(m.lines[:idx], m.lines[idx+1:]...)
+	m.rebuildFiltered()
+	// skip save()
+}
+
+func (m *Model) LineType(filteredIdx int) hosts.LineType {
+	return m.lines[m.filtered[filteredIdx]].Type
+}
+
+func (m *Model) PressKeyForTest(key string) {
+	m.handleBrowsing(key)
+}
+
+func (m *Model) SetAddFormValues(ip, hostname string) {
+	m.mode = modeAdding
+	m.addFocus = addFieldIP
+	m.ipInput.SetValue(ip)
+	m.hostnameInput.SetValue(hostname)
+}
+
+func (m *Model) SubmitAddFormForTest() {
+	// submitAddForm calls save() which will fail with no path set — that's ok;
+	// the entry is still appended to m.lines before save is called if validation passes.
+	m.submitAddForm()
+}
+
+func (m *Model) AddErr() string { return m.addErr }

@@ -95,10 +95,6 @@ func (m *Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	return m, nil
-}
-
 func (m *Model) rebuildFiltered() {
 	m.filtered = nil
 	q := strings.ToLower(m.filter)
@@ -254,11 +250,4 @@ func (m *Model) viewScratch() string {
 	return lipgloss.JoinHorizontal(lipgloss.Top, leftCol, rightCol) +
 		"\n" + strings.Repeat("─", m.width) +
 		"\n" + styleHelp.Render("[esc] close scratch")
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }
