@@ -50,13 +50,14 @@ type Model struct {
 }
 
 func New(path string) (*Model, error) {
-	info, err := os.Stat(path)
-	if err != nil {
+	if _, err := os.Stat(path); err != nil {
 		return nil, fmt.Errorf("cannot access %s: %w", path, err)
 	}
-	if info.Mode().Perm()&0200 == 0 {
-		return nil, fmt.Errorf("hostage requires root to modify %s. Run with sudo.", path)
+	f, err := os.OpenFile(path, os.O_WRONLY, 0)
+	if err != nil {
+		return nil, fmt.Errorf("hostage requires write access to %s. Run with sudo.", path)
 	}
+	f.Close()
 
 	content, err := os.ReadFile(path)
 	if err != nil {

@@ -47,7 +47,11 @@ func Write(path string, lines []Line, knownMtime time.Time) error {
 
 	if err := os.Rename(tmpPath, path); err != nil {
 		log.Printf("hostage: atomic rename failed, falling back to direct write: %v", err)
-		if err2 := os.WriteFile(path, []byte(content), 0644); err2 != nil {
+		var origMode os.FileMode = 0644
+		if fi, statErr := os.Stat(path); statErr == nil {
+			origMode = fi.Mode().Perm()
+		}
+		if err2 := os.WriteFile(path, []byte(content), origMode); err2 != nil {
 			os.Remove(tmpPath)
 			return fmt.Errorf("write %s: %w", path, err2)
 		}
