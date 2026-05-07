@@ -3,15 +3,15 @@
 A terminal UI for managing `/etc/hosts` entries.
 
 ```
-hostage
-Filter: [___________________________]
-────────────────────────────────────────────────────────
-● 127.0.0.1      localhost
-● 192.168.1.10   mysite.local
-○ 10.0.0.1       disabled.local
-● 192.168.1.20   another.host
-────────────────────────────────────────────────────────
-[a/i] add  [d/x] delete  [space] toggle  [/] filter  [q] quit
+▎ hostage                                        /etc/hosts
+⌕ Filter ▏
+────────────────────────────────────────────────────────────
+▌● 127.0.0.1       localhost
+ ● 192.168.1.10    mysite.local
+ ○ 10.0.0.1        disabled.local
+ ● 192.168.1.20    another.host
+────────────────────────────────────────────────────────────
+[a] add  ·  [d] delete  ·  [space] toggle  ·  [/] filter  ·  [q] quit
 ```
 
 ## Install
@@ -49,7 +49,7 @@ Root access is required to write to `/etc/hosts`.
 - **Delete** — confirmation prompt before removing an entry
 - **Enable / disable** — toggle entries on and off by commenting them out (`# ip hostname`) without deleting them
 - **Filter** — live search by IP or hostname
-- **Conflict detection** — if `/etc/hosts` is modified externally while `hostage` is open, the write is aborted and a split-pane scratch view shows the pre-reload buffer so you can reconcile changes manually
+- **Conflict detection** — if `/etc/hosts` is modified externally while `hostage` is open, the write is aborted and a split-pane scratch view shows the pre-reload buffer so you can reconcile changes manually; new entries are marked `+` and removed-only entries are marked `~`
 - **Atomic writes** — changes are written via a temp file rename to avoid corruption
 
 ## Disabled entry format
