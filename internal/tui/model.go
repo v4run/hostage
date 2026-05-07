@@ -135,11 +135,24 @@ func (m *Model) View() string {
 func (m *Model) viewMain() string {
 	var b strings.Builder
 
-	b.WriteString(styleTitle.Render("hostage") + "\n")
-	b.WriteString("Filter: ")
-	b.WriteString(m.filterInput.View() + "\n")
-	b.WriteString(strings.Repeat("─", m.width) + "\n")
+	// --- Title row: accent stripe + label, with a muted right-side hint.
+	title := styleTitleStripe.Render("▎") + styleTitle.Render(" hostage")
+	hint := styleSubtitle.Render("/etc/hosts")
+	pad := m.width - lipgloss.Width(title) - lipgloss.Width(hint)
+	if pad < 1 {
+		pad = 1
+	}
+	b.WriteString(title + strings.Repeat(" ", pad) + hint + "\n")
 
+	// --- Filter row: glyph + label + input.
+	b.WriteString(styleFilterGlyph.Render("⌕ ") +
+		styleFilterLabel.Render("Filter ") +
+		m.filterInput.View() + "\n")
+
+	// --- Top rule.
+	b.WriteString(styleRule.Render(strings.Repeat("─", m.width)) + "\n")
+
+	// --- List body.
 	listHeight := m.height - 7
 	if listHeight < 1 {
 		listHeight = 1
@@ -150,30 +163,46 @@ func (m *Model) viewMain() string {
 	}
 
 	if len(m.filtered) == 0 {
+		msg := "  No entries in hosts file"
 		if m.filter != "" {
-			b.WriteString(styleDisabled.Render("  No entries match filter") + "\n")
-		} else {
-			b.WriteString(styleDisabled.Render("  No entries in hosts file") + "\n")
+			msg = "  No entries match filter"
 		}
+		b.WriteString(styleEntryDim.Render(msg) + "\n")
 	}
 
 	for i := start; i < len(m.filtered) && i < start+listHeight; i++ {
 		l := m.lines[m.filtered[i]]
-		bullet := styleEnabled.Render("●")
-		line := fmt.Sprintf("%-16s %s", l.IP, strings.Join(l.Hostnames, " "))
+		hostnames := strings.Join(l.Hostnames, " ")
+
+		var bullet, ip, host string
 		if l.Type == hosts.LineDisabled {
 			bullet = styleDisabled.Render("○")
-			line = styleDisabled.Render(fmt.Sprintf("%-16s %s", l.IP, strings.Join(l.Hostnames, " ")))
+			ip = styleDisabled.Render(fmt.Sprintf("%-16s", l.IP))
+			host = styleDisabled.Render(hostnames)
+		} else {
+			bullet = styleEnabled.Render("●")
+			ip = styleEntryIP.Render(fmt.Sprintf("%-16s", l.IP))
+			host = styleEntryHost.Render(hostnames)
 		}
-		row := bullet + " " + line
+
+		content := bullet + " " + ip + " " + host
+
 		if i == m.cursor {
-			row = styleSelected.Width(m.width - 1).Render(row)
+			bar := styleSelBar.Render("▌")
+			padN := m.width - 1 - lipgloss.Width(content)
+			if padN < 0 {
+				padN = 0
+			}
+			b.WriteString(bar + styleSelBg.Render(content+strings.Repeat(" ", padN)) + "\n")
+		} else {
+			b.WriteString(" " + content + "\n")
 		}
-		b.WriteString(row + "\n")
 	}
 
-	b.WriteString(strings.Repeat("─", m.width) + "\n")
+	// --- Bottom rule.
+	b.WriteString(styleRule.Render(strings.Repeat("─", m.width)) + "\n")
 
+	// --- Mode-dependent footer.
 	switch m.mode {
 	case modeAdding:
 		b.WriteString(m.viewAddForm())
@@ -181,9 +210,15 @@ func (m *Model) viewMain() string {
 		b.WriteString(m.viewDeleteConfirm())
 	default:
 		if m.statusMsg != "" {
-			b.WriteString(styleStatus.Render(m.statusMsg) + "\n")
+			b.WriteString(styleStatusDot.Render("●") + " " + styleStatus.Render(m.statusMsg) + "\n")
 		} else {
-			b.WriteString(styleHelp.Render("[a/i] add  [d/x] delete  [space] toggle  [/] filter  [q] quit") + "\n")
+			b.WriteString(helpBar(
+				helpItem("a", "add"),
+				helpItem("d", "delete"),
+				helpItem("space", "toggle"),
+				helpItem("/", "filter"),
+				helpItem("q", "quit"),
+			) + "\n")
 		}
 	}
 
@@ -192,20 +227,36 @@ func (m *Model) viewMain() string {
 
 func (m *Model) viewAddForm() string {
 	var b strings.Builder
-	b.WriteString("Add entry:\n")
-	ipMarker, hnMarker := "  ", "  "
+
+	b.WriteString(styleFormTitle.Render("Add entry") + "\n")
+	b.WriteString(styleRule.Render(strings.Repeat("┄", 24)) + "\n")
+
+	ipCaret := styleFormCaretDim.Render("  ")
+	hnCaret := styleFormCaretDim.Render("  ")
 	if m.addFocus == addFieldIP {
-		ipMarker = "> "
+		ipCaret = styleFormCaret.Render("▸ ")
 	} else {
-		hnMarker = "> "
+		hnCaret = styleFormCaret.Render("▸ ")
 	}
-	b.WriteString(ipMarker + "IP:       " + m.ipInput.View() + "\n")
-	b.WriteString(hnMarker + "Hostname: " + m.hostnameInput.View() + "\n")
+
+	b.WriteString(ipCaret + styleFormLabel.Render("IP       ") + m.ipInput.View() + "\n")
+	b.WriteString(hnCaret + styleFormLabel.Render("Hostname ") + m.hostnameInput.View() + "\n")
+
 	if m.addErr != "" {
-		b.WriteString(styleError.Render("  "+m.addErr) + "\n")
+		b.WriteString("  " + styleError.Render("✗ "+m.addErr) + "\n")
 	}
-	b.WriteString(styleHelp.Render("  [tab] next field  [enter] confirm  [esc] cancel"))
-	return b.String()
+
+	b.WriteString(helpBar(
+		helpItem("tab", "next field"),
+		helpItem("enter", "confirm"),
+		helpItem("esc", "cancel"),
+	))
+
+	cardWidth := m.width - 2
+	if cardWidth < 20 {
+		cardWidth = 20
+	}
+	return styleFormCard.Width(cardWidth).Render(b.String())
 }
 
 func (m *Model) viewDeleteConfirm() string {
@@ -213,8 +264,16 @@ func (m *Model) viewDeleteConfirm() string {
 		return ""
 	}
 	l := m.lines[m.filtered[m.cursor]]
-	entry := l.IP + " " + strings.Join(l.Hostnames, " ")
-	return styleError.Render(fmt.Sprintf("Delete %q? (y/n)", entry))
+	entry := l.IP + "  " + strings.Join(l.Hostnames, " ")
+
+	return styleDeleteStripe.Render("▎") + " " +
+		styleDeleteBanner.Render("Delete") + " " +
+		styleDeleteEntry.Render(entry) + "  " +
+		styleHelp.Render("(") +
+		styleHelpKey.Render("y") +
+		styleHelp.Render(" / ") +
+		styleHelpKey.Render("n") +
+		styleHelp.Render(")")
 }
 
 func (m *Model) viewScratch() string {
@@ -222,34 +281,73 @@ func (m *Model) viewScratch() string {
 	if half < 1 {
 		half = 1
 	}
-	var left, right strings.Builder
 
-	left.WriteString(styleTitle.Render("hostage (reloaded)") + "\n")
-	right.WriteString(styleTitle.Render("scratch (pre-reload)") + "\n")
+	// --- Headers.
+	leftHeader := styleScratchHeaderActive.Render("▎ hostage ") + styleSubtitle.Render("(reloaded)")
+	rightHeader := styleScratchHeaderDim.Render("▎ scratch ") + styleSubtitle.Render("(pre-reload)")
+	headerRow := lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		lipgloss.NewStyle().Width(half).Render(leftHeader),
+		lipgloss.NewStyle().Width(m.width-half).Render(rightHeader),
+	)
 
-	maxRows := m.height - 4
+	// --- Divider with proper junctions.
+	divider := styleScratchDivider.Render(strings.Repeat("─", half-1) + "┬" + strings.Repeat("─", m.width-half-1))
+
+	// --- Body rows with +/~ change markers.
+	maxRows := m.height - 5
 	if maxRows < 1 {
 		maxRows = 1
 	}
 	leftLines := m.visibleLines()
+
+	rightKeys := make(map[string]bool, len(m.scratchLines))
+	for _, l := range m.scratchLines {
+		rightKeys[l.IP+"|"+strings.Join(l.Hostnames, " ")] = true
+	}
+	leftKeys := make(map[string]bool, len(leftLines))
+	for _, l := range leftLines {
+		leftKeys[l.IP+"|"+strings.Join(l.Hostnames, " ")] = true
+	}
+
+	var leftCol, rightCol strings.Builder
 	for i := 0; i < maxRows; i++ {
 		if i < len(leftLines) {
 			l := leftLines[i]
-			left.WriteString(fmt.Sprintf("%-16s %s\n", l.IP, strings.Join(l.Hostnames, " ")))
+			key := l.IP + "|" + strings.Join(l.Hostnames, " ")
+			marker := " "
+			if !rightKeys[key] {
+				marker = styleEnabled.Render("+")
+			}
+			leftCol.WriteString(fmt.Sprintf("%s %-16s %s\n", marker, l.IP, strings.Join(l.Hostnames, " ")))
 		} else {
-			left.WriteString("\n")
+			leftCol.WriteString("\n")
 		}
+
 		if i < len(m.scratchLines) {
 			l := m.scratchLines[i]
-			right.WriteString(styleDisabled.Render(fmt.Sprintf("%-16s %s", l.IP, strings.Join(l.Hostnames, " "))) + "\n")
+			key := l.IP + "|" + strings.Join(l.Hostnames, " ")
+			marker := " "
+			body := fmt.Sprintf("%-16s %s", l.IP, strings.Join(l.Hostnames, " "))
+			if !leftKeys[key] {
+				marker = styleError.Render("~")
+				body = styleScratchOnly.Render(body)
+			} else {
+				body = styleDisabled.Render(body)
+			}
+			rightCol.WriteString(marker + " " + body + "\n")
 		} else {
-			right.WriteString("\n")
+			rightCol.WriteString("\n")
 		}
 	}
 
-	leftCol := lipgloss.NewStyle().Width(half).Render(left.String())
-	rightCol := lipgloss.NewStyle().Width(half).Render(right.String())
-	return lipgloss.JoinHorizontal(lipgloss.Top, leftCol, rightCol) +
-		"\n" + strings.Repeat("─", m.width) +
-		"\n" + styleHelp.Render("[esc] close scratch")
+	body := lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		lipgloss.NewStyle().Width(half).Render(leftCol.String()),
+		lipgloss.NewStyle().Width(m.width-half).Render(rightCol.String()),
+	)
+
+	return headerRow + "\n" + divider + "\n" + body + "\n" +
+		styleRule.Render(strings.Repeat("─", m.width)) + "\n" +
+		helpBar(helpItem("esc", "close scratch"))
 }
