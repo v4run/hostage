@@ -1,3 +1,5 @@
+![hostage](assets/logo.svg)
+
 # hostage
 
 A terminal UI for managing `/etc/hosts` entries.
