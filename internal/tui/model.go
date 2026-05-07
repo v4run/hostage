@@ -193,13 +193,14 @@ func (m *Model) viewMain() string {
 func (m *Model) viewAddForm() string {
 	var b strings.Builder
 	b.WriteString("Add entry:\n")
+	ipMarker, hnMarker := "  ", "  "
 	if m.addFocus == addFieldIP {
-		b.WriteString("  IP:       " + lipgloss.NewStyle().Underline(true).Render(m.ipInput.View()) + "\n")
-		b.WriteString("  Hostname: " + m.hostnameInput.View() + "\n")
+		ipMarker = "> "
 	} else {
-		b.WriteString("  IP:       " + m.ipInput.View() + "\n")
-		b.WriteString("  Hostname: " + lipgloss.NewStyle().Underline(true).Render(m.hostnameInput.View()) + "\n")
+		hnMarker = "> "
 	}
+	b.WriteString(ipMarker + "IP:       " + m.ipInput.View() + "\n")
+	b.WriteString(hnMarker + "Hostname: " + m.hostnameInput.View() + "\n")
 	if m.addErr != "" {
 		b.WriteString(styleError.Render("  "+m.addErr) + "\n")
 	}
