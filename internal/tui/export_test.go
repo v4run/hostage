@@ -98,3 +98,10 @@ func (m *Model) SetEditFormValues(idx int, ip, hostname string) {
 func (m *Model) CancelFormForTest() {
 	m.handleAdding(tea.KeyMsg{Type: tea.KeyEsc})
 }
+
+func (m *Model) ViewForTest() string { return m.View() }
+
+func (m *Model) SetWindowSizeForTest(w, h int) {
+	m.width = w
+	m.height = h
+}

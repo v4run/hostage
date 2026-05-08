@@ -206,7 +206,7 @@ func (m *Model) viewMain() string {
 
 	// --- Mode-dependent footer.
 	switch m.mode {
-	case modeAdding:
+	case modeAdding, modeEditing:
 		b.WriteString(m.viewAddForm())
 	case modeConfirmingDelete:
 		b.WriteString(m.viewDeleteConfirm())
@@ -216,6 +216,7 @@ func (m *Model) viewMain() string {
 		} else {
 			b.WriteString(helpBar(
 				helpItem("a", "add"),
+				helpItem("e", "edit"),
 				helpItem("d", "delete"),
 				helpItem("space", "toggle"),
 				helpItem("/", "filter"),
@@ -230,7 +231,11 @@ func (m *Model) viewMain() string {
 func (m *Model) viewAddForm() string {
 	var b strings.Builder
 
-	b.WriteString(styleFormTitle.Render("Add entry") + "\n")
+	title := "Add entry"
+	if m.mode == modeEditing {
+		title = "Edit entry"
+	}
+	b.WriteString(styleFormTitle.Render(title) + "\n")
 	b.WriteString(styleRule.Render(strings.Repeat("┄", 24)) + "\n")
 
 	ipCaret := styleFormCaretDim.Render("  ")
