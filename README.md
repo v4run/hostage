@@ -13,7 +13,7 @@ A terminal UI for managing `/etc/hosts` entries.
  ○ 10.0.0.1        disabled.local
  ● 192.168.1.20    another.host
 ────────────────────────────────────────────────────────────
-[a] add  ·  [d] delete  ·  [space] toggle  ·  [/] filter  ·  [q] quit
+[a] add  ·  [e] edit  ·  [d] delete  ·  [space] toggle  ·  [/] filter  ·  [q] quit
 ```
 
 ## Install
@@ -40,6 +40,7 @@ Root access is required to write to `/etc/hosts`.
 | `G`            | Jump to bottom          |
 | `space`        | Toggle enable / disable |
 | `a` / `i`      | Add new entry           |
+| `e`            | Edit entry              |
 | `d` / `x`      | Delete entry            |
 | `/`            | Filter entries          |
 | `esc`          | Clear filter / cancel   |
@@ -48,6 +49,7 @@ Root access is required to write to `/etc/hosts`.
 ## Features
 
 - **Add** — enter an IP and hostname; validates the IP before saving
+- **Edit** — change an entry's IP or hostname(s) in place; preserves enabled / disabled state
 - **Delete** — confirmation prompt before removing an entry
 - **Enable / disable** — toggle entries on and off by commenting them out (`# ip hostname`) without deleting them
 - **Filter** — live search by IP or hostname
