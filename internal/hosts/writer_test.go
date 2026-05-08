@@ -73,6 +73,33 @@ func TestWriteAtomic(t *testing.T) {
 	}
 }
 
+func TestWritePreservesPermissions(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "hosts")
+	if err := os.WriteFile(path, []byte("127.0.0.1 localhost\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(path, 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	mtime, _ := hosts.ReadMtime(path)
+	lines := []hosts.Line{
+		{Type: hosts.LineEntry, IP: "10.0.0.1", Hostnames: []string{"newhost"}},
+	}
+	if err := hosts.Write(path, lines, mtime); err != nil {
+		t.Fatal(err)
+	}
+
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := info.Mode().Perm(); got != 0644 {
+		t.Errorf("expected mode 0644 after write, got %o", got)
+	}
+}
+
 func TestWritePreservesComments(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "hosts")

@@ -19,13 +19,14 @@ func ReadMtime(path string) (time.Time, error) {
 }
 
 func Write(path string, lines []Line, knownMtime time.Time) error {
-	current, err := ReadMtime(path)
+	info, err := os.Stat(path)
 	if err != nil {
 		return err
 	}
-	if !current.Equal(knownMtime) {
+	if !info.ModTime().Equal(knownMtime) {
 		return ErrConflict
 	}
+	origMode := info.Mode().Perm()
 
 	content := Format(lines)
 
@@ -45,12 +46,13 @@ func Write(path string, lines []Line, knownMtime time.Time) error {
 		return fmt.Errorf("close temp file: %w", err)
 	}
 
+	if err := os.Chmod(tmpPath, origMode); err != nil {
+		os.Remove(tmpPath)
+		return fmt.Errorf("chmod temp file: %w", err)
+	}
+
 	if err := os.Rename(tmpPath, path); err != nil {
 		log.Printf("hostage: atomic rename failed, falling back to direct write: %v", err)
-		var origMode os.FileMode = 0644
-		if fi, statErr := os.Stat(path); statErr == nil {
-			origMode = fi.Mode().Perm()
-		}
 		if err2 := os.WriteFile(path, []byte(content), origMode); err2 != nil {
 			os.Remove(tmpPath)
 			return fmt.Errorf("write %s: %w", path, err2)
