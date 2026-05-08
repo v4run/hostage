@@ -122,7 +122,7 @@ func TestEditKeybindingOpensForm(t *testing.T) {
 func TestEditKeybindingNoOpOnEmpty(t *testing.T) {
 	m := tui.NewTestModel(nil)
 	m.PressKeyForTest("e")
-	if m.IsEditing() {
+	if !m.IsBrowsing() {
 		t.Error("expected mode to stay browsing when filtered list is empty")
 	}
 }

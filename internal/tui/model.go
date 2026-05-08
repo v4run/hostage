@@ -18,9 +18,9 @@ const (
 	modeBrowsing mode = iota
 	modeFiltering
 	modeAdding
+	modeEditing
 	modeConfirmingDelete
 	modeScratch
-	modeEditing
 )
 
 type addField int
