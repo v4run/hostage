@@ -151,8 +151,7 @@ func TestSubmitEditFormReplacesEntry(t *testing.T) {
 	if m.LineIP(1) != "192.168.1.20" {
 		t.Errorf("expected IP %q, got %q", "192.168.1.20", m.LineIP(1))
 	}
-	got := m.LineHostnames(1)
-	if len(got) != 1 || got[0] != "new.local" {
+	if got := m.LineHostnames(1); !slices.Equal(got, []string{"new.local"}) {
 		t.Errorf("expected hostnames [new.local], got %v", got)
 	}
 	if !m.IsBrowsing() {
@@ -213,8 +212,7 @@ func TestSubmitEditFormValidation(t *testing.T) {
 		if m.AddErr() == "" {
 			t.Error("expected error for empty hostname")
 		}
-		got := m.LineHostnames(0)
-		if len(got) != 1 || got[0] != "orig.local" {
+		if got := m.LineHostnames(0); !slices.Equal(got, []string{"orig.local"}) {
 			t.Errorf("expected line unchanged, got hostnames %v", got)
 		}
 	})

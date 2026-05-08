@@ -88,9 +88,9 @@ func (m *Model) LineIP(filteredIdx int) string {
 }
 
 func (m *Model) SetEditFormValues(idx int, ip, hostname string) {
+	m.resetAddForm()
 	m.mode = modeEditing
 	m.editIndex = idx
-	m.addFocus = addFieldIP
 	m.ipInput.SetValue(ip)
 	m.hostnameInput.SetValue(hostname)
 }
