@@ -96,3 +96,43 @@ func TestSubmitAddFormMultiHostname(t *testing.T) {
 		t.Errorf("hostnames: want %v, got %v", want, got)
 	}
 }
+
+func TestEditKeybindingOpensForm(t *testing.T) {
+	m := tui.NewTestModel([]hosts.Line{
+		{Type: hosts.LineEntry, IP: "127.0.0.1", Hostnames: []string{"localhost"}},
+		{Type: hosts.LineEntry, IP: "192.168.1.10", Hostnames: []string{"mysite.local"}},
+	})
+	m.SetCursor(1)
+	m.PressKeyForTest("e")
+
+	if !m.IsEditing() {
+		t.Fatal("expected mode to be editing after pressing e")
+	}
+	if m.EditIndex() != 1 {
+		t.Errorf("expected editIndex 1, got %d", m.EditIndex())
+	}
+	if m.IPFieldValue() != "192.168.1.10" {
+		t.Errorf("expected IP field %q, got %q", "192.168.1.10", m.IPFieldValue())
+	}
+	if m.HostnameFieldValue() != "mysite.local" {
+		t.Errorf("expected hostname field %q, got %q", "mysite.local", m.HostnameFieldValue())
+	}
+}
+
+func TestEditKeybindingNoOpOnEmpty(t *testing.T) {
+	m := tui.NewTestModel(nil)
+	m.PressKeyForTest("e")
+	if m.IsEditing() {
+		t.Error("expected mode to stay browsing when filtered list is empty")
+	}
+}
+
+func TestEditKeybindingPopulatesMultiHostname(t *testing.T) {
+	m := tui.NewTestModel([]hosts.Line{
+		{Type: hosts.LineEntry, IP: "127.0.0.1", Hostnames: []string{"localhost", "broadcasthost"}},
+	})
+	m.PressKeyForTest("e")
+	if m.HostnameFieldValue() != "localhost broadcasthost" {
+		t.Errorf("expected space-joined hostnames, got %q", m.HostnameFieldValue())
+	}
+}

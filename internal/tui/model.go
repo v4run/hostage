@@ -20,6 +20,7 @@ const (
 	modeAdding
 	modeConfirmingDelete
 	modeScratch
+	modeEditing
 )
 
 type addField int
@@ -42,6 +43,7 @@ type Model struct {
 	hostnameInput textinput.Model
 	addFocus      addField
 	addErr        string
+	editIndex     int
 	scratchLines  []hosts.Line
 	statusMsg     string
 	width         int

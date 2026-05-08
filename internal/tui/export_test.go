@@ -1,9 +1,18 @@
 package tui
 
-import "github.com/v4run/hostage/internal/hosts"
+import (
+	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/v4run/hostage/internal/hosts"
+)
 
 func NewTestModel(lines []hosts.Line) *Model {
-	m := &Model{lines: lines}
+	ip := textinput.New()
+	hn := textinput.New()
+	m := &Model{
+		lines:         lines,
+		ipInput:       ip,
+		hostnameInput: hn,
+	}
 	m.rebuildFiltered()
 	return m
 }
@@ -66,3 +75,9 @@ func (m *Model) SubmitAddFormForTest() {
 }
 
 func (m *Model) AddErr() string { return m.addErr }
+
+func (m *Model) IsEditing() bool            { return m.mode == modeEditing }
+func (m *Model) IsBrowsing() bool           { return m.mode == modeBrowsing }
+func (m *Model) EditIndex() int             { return m.editIndex }
+func (m *Model) IPFieldValue() string       { return m.ipInput.Value() }
+func (m *Model) HostnameFieldValue() string { return m.hostnameInput.Value() }

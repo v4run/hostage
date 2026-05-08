@@ -32,7 +32,7 @@ func (m *Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.handleBrowsing(key)
 	case modeFiltering:
 		return m.handleFiltering(msg)
-	case modeAdding:
+	case modeAdding, modeEditing:
 		return m.handleAdding(msg)
 	case modeConfirmingDelete:
 		return m.handleConfirmDelete(key)
@@ -74,6 +74,11 @@ func (m *Model) handleBrowsing(key string) (tea.Model, tea.Cmd) {
 		m.lastKey = ""
 	case "a", "i":
 		m.openAddForm()
+		m.lastKey = ""
+	case "e":
+		if len(m.filtered) > 0 {
+			m.openEditForm()
+		}
 		m.lastKey = ""
 	case "d", "x":
 		if len(m.filtered) > 0 {
@@ -178,6 +183,17 @@ func (m *Model) deleteCurrent() {
 func (m *Model) openAddForm() {
 	m.resetAddForm()
 	m.mode = modeAdding
+	m.addFocus = addFieldIP
+	m.ipInput.Focus()
+}
+
+func (m *Model) openEditForm() {
+	m.resetAddForm()
+	m.editIndex = m.filtered[m.cursor]
+	line := m.lines[m.editIndex]
+	m.ipInput.SetValue(line.IP)
+	m.hostnameInput.SetValue(strings.Join(line.Hostnames, " "))
+	m.mode = modeEditing
 	m.addFocus = addFieldIP
 	m.ipInput.Focus()
 }
