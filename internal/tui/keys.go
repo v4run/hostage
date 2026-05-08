@@ -199,7 +199,8 @@ func (m *Model) submitAddForm() (tea.Model, tea.Cmd) {
 		m.addErr = "Invalid IP address"
 		return m, nil
 	}
-	if hn == "" {
+	hostnames := strings.Fields(hn)
+	if len(hostnames) == 0 {
 		m.addErr = "Hostname cannot be empty"
 		return m, nil
 	}
@@ -207,7 +208,7 @@ func (m *Model) submitAddForm() (tea.Model, tea.Cmd) {
 	newLine := hosts.Line{
 		Type:      hosts.LineEntry,
 		IP:        ip,
-		Hostnames: []string{hn},
+		Hostnames: hostnames,
 	}
 	m.lines = append(m.lines, newLine)
 	m.rebuildFiltered()

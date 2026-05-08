@@ -81,3 +81,22 @@ func TestSubmitAddFormAddsEntry(t *testing.T) {
 		t.Errorf("expected 1 entry after add, got %d", m.FilteredCount())
 	}
 }
+
+func TestSubmitAddFormMultiHostname(t *testing.T) {
+	m := tui.NewTestModel(nil)
+	m.SetAddFormValues("10.0.0.1", "host1 host2 host3")
+	m.SubmitAddFormForTest()
+	if m.FilteredCount() != 1 {
+		t.Fatalf("expected 1 entry, got %d", m.FilteredCount())
+	}
+	got := m.LineHostnames(0)
+	want := []string{"host1", "host2", "host3"}
+	if len(got) != len(want) {
+		t.Fatalf("expected %d hostnames, got %d (%v)", len(want), len(got), got)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Errorf("hostname[%d]: want %q, got %q", i, want[i], got[i])
+		}
+	}
+}

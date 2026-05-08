@@ -44,6 +44,10 @@ func (m *Model) LineType(filteredIdx int) hosts.LineType {
 	return m.lines[m.filtered[filteredIdx]].Type
 }
 
+func (m *Model) LineHostnames(filteredIdx int) []string {
+	return m.lines[m.filtered[filteredIdx]].Hostnames
+}
+
 func (m *Model) PressKeyForTest(key string) {
 	m.handleBrowsing(key)
 }
