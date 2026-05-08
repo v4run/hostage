@@ -193,13 +193,12 @@ func (m *Model) resetAddForm() {
 
 func (m *Model) submitAddForm() (tea.Model, tea.Cmd) {
 	ip := strings.TrimSpace(m.ipInput.Value())
-	hn := strings.TrimSpace(m.hostnameInput.Value())
 
 	if net.ParseIP(ip) == nil {
 		m.addErr = "Invalid IP address"
 		return m, nil
 	}
-	hostnames := strings.Fields(hn)
+	hostnames := strings.Fields(m.hostnameInput.Value())
 	if len(hostnames) == 0 {
 		m.addErr = "Hostname cannot be empty"
 		return m, nil

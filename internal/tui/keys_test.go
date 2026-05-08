@@ -1,6 +1,7 @@
 package tui_test
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/v4run/hostage/internal/hosts"
@@ -91,12 +92,7 @@ func TestSubmitAddFormMultiHostname(t *testing.T) {
 	}
 	got := m.LineHostnames(0)
 	want := []string{"host1", "host2", "host3"}
-	if len(got) != len(want) {
-		t.Fatalf("expected %d hostnames, got %d (%v)", len(want), len(got), got)
-	}
-	for i := range want {
-		if got[i] != want[i] {
-			t.Errorf("hostname[%d]: want %q, got %q", i, want[i], got[i])
-		}
+	if !slices.Equal(got, want) {
+		t.Errorf("hostnames: want %v, got %v", want, got)
 	}
 }
