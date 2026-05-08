@@ -136,3 +136,101 @@ func TestEditKeybindingPopulatesMultiHostname(t *testing.T) {
 		t.Errorf("expected space-joined hostnames, got %q", m.HostnameFieldValue())
 	}
 }
+
+func TestSubmitEditFormReplacesEntry(t *testing.T) {
+	m := tui.NewTestModel([]hosts.Line{
+		{Type: hosts.LineEntry, IP: "127.0.0.1", Hostnames: []string{"localhost"}},
+		{Type: hosts.LineEntry, IP: "192.168.1.10", Hostnames: []string{"old.local"}},
+	})
+	m.SetEditFormValues(1, "192.168.1.20", "new.local")
+	m.SubmitAddFormForTest()
+
+	if m.FilteredCount() != 2 {
+		t.Fatalf("expected 2 entries (count unchanged), got %d", m.FilteredCount())
+	}
+	if m.LineIP(1) != "192.168.1.20" {
+		t.Errorf("expected IP %q, got %q", "192.168.1.20", m.LineIP(1))
+	}
+	got := m.LineHostnames(1)
+	if len(got) != 1 || got[0] != "new.local" {
+		t.Errorf("expected hostnames [new.local], got %v", got)
+	}
+	if !m.IsBrowsing() {
+		t.Error("expected mode to return to browsing after submit")
+	}
+}
+
+func TestSubmitEditFormPreservesDisabledState(t *testing.T) {
+	m := tui.NewTestModel([]hosts.Line{
+		{Type: hosts.LineDisabled, IP: "10.0.0.1", Hostnames: []string{"old.local"}},
+	})
+	m.SetEditFormValues(0, "10.0.0.1", "new.local")
+	m.SubmitAddFormForTest()
+
+	if m.LineType(0) != hosts.LineDisabled {
+		t.Errorf("expected line to remain disabled, got %v", m.LineType(0))
+	}
+}
+
+func TestSubmitEditFormMultiHostname(t *testing.T) {
+	m := tui.NewTestModel([]hosts.Line{
+		{Type: hosts.LineEntry, IP: "127.0.0.1", Hostnames: []string{"localhost", "broadcasthost"}},
+	})
+	m.SetEditFormValues(0, "127.0.0.1", "localhost broadcasthost")
+	m.SubmitAddFormForTest()
+
+	got := m.LineHostnames(0)
+	want := []string{"localhost", "broadcasthost"}
+	if !slices.Equal(got, want) {
+		t.Errorf("hostnames: want %v, got %v", want, got)
+	}
+}
+
+func TestSubmitEditFormValidation(t *testing.T) {
+	original := []hosts.Line{
+		{Type: hosts.LineEntry, IP: "10.0.0.1", Hostnames: []string{"orig.local"}},
+	}
+
+	t.Run("invalid IP", func(t *testing.T) {
+		m := tui.NewTestModel(append([]hosts.Line(nil), original...))
+		m.SetEditFormValues(0, "not-an-ip", "new.local")
+		m.SubmitAddFormForTest()
+		if m.AddErr() == "" {
+			t.Error("expected error for invalid IP")
+		}
+		if m.LineIP(0) != "10.0.0.1" {
+			t.Errorf("expected line unchanged on validation failure, IP is now %q", m.LineIP(0))
+		}
+		if !m.IsEditing() {
+			t.Error("expected to remain in edit mode on validation failure")
+		}
+	})
+
+	t.Run("empty hostname", func(t *testing.T) {
+		m := tui.NewTestModel(append([]hosts.Line(nil), original...))
+		m.SetEditFormValues(0, "10.0.0.1", "   ")
+		m.SubmitAddFormForTest()
+		if m.AddErr() == "" {
+			t.Error("expected error for empty hostname")
+		}
+		got := m.LineHostnames(0)
+		if len(got) != 1 || got[0] != "orig.local" {
+			t.Errorf("expected line unchanged, got hostnames %v", got)
+		}
+	})
+}
+
+func TestEscCancelsEditForm(t *testing.T) {
+	m := tui.NewTestModel([]hosts.Line{
+		{Type: hosts.LineEntry, IP: "10.0.0.1", Hostnames: []string{"orig.local"}},
+	})
+	m.SetEditFormValues(0, "10.0.0.1", "changed.local")
+	m.CancelFormForTest()
+
+	if !m.IsBrowsing() {
+		t.Error("expected edit mode to be cancelled by esc")
+	}
+	if m.LineIP(0) != "10.0.0.1" || m.LineHostnames(0)[0] != "orig.local" {
+		t.Errorf("expected line unchanged on cancel, got %s %v", m.LineIP(0), m.LineHostnames(0))
+	}
+}

@@ -2,6 +2,7 @@ package tui
 
 import (
 	"github.com/charmbracelet/bubbles/textinput"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/v4run/hostage/internal/hosts"
 )
 
@@ -81,3 +82,19 @@ func (m *Model) IsBrowsing() bool           { return m.mode == modeBrowsing }
 func (m *Model) EditIndex() int             { return m.editIndex }
 func (m *Model) IPFieldValue() string       { return m.ipInput.Value() }
 func (m *Model) HostnameFieldValue() string { return m.hostnameInput.Value() }
+
+func (m *Model) LineIP(filteredIdx int) string {
+	return m.lines[m.filtered[filteredIdx]].IP
+}
+
+func (m *Model) SetEditFormValues(idx int, ip, hostname string) {
+	m.mode = modeEditing
+	m.editIndex = idx
+	m.addFocus = addFieldIP
+	m.ipInput.SetValue(ip)
+	m.hostnameInput.SetValue(hostname)
+}
+
+func (m *Model) CancelFormForTest() {
+	m.handleAdding(tea.KeyMsg{Type: tea.KeyEsc})
+}

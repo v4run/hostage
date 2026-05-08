@@ -220,14 +220,24 @@ func (m *Model) submitAddForm() (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	newLine := hosts.Line{
-		Type:      hosts.LineEntry,
-		IP:        ip,
-		Hostnames: hostnames,
+	if m.mode == modeEditing {
+		orig := m.lines[m.editIndex]
+		m.lines[m.editIndex] = hosts.Line{
+			Type:      orig.Type,
+			IP:        ip,
+			Hostnames: hostnames,
+		}
+		m.rebuildFiltered()
+	} else {
+		newLine := hosts.Line{
+			Type:      hosts.LineEntry,
+			IP:        ip,
+			Hostnames: hostnames,
+		}
+		m.lines = append(m.lines, newLine)
+		m.rebuildFiltered()
+		m.cursor = len(m.filtered) - 1
 	}
-	m.lines = append(m.lines, newLine)
-	m.rebuildFiltered()
-	m.cursor = len(m.filtered) - 1
 
 	if err := m.save(); err != nil {
 		m.statusMsg = "Error: " + err.Error()
