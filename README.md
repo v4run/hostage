@@ -13,7 +13,7 @@ A terminal UI for managing `/etc/hosts` entries.
  ○ 10.0.0.1        disabled.local
  ● 192.168.1.20    another.host
 ────────────────────────────────────────────────────────────
-[a] add  ·  [e] edit  ·  [d] delete  ·  [space] toggle  ·  [/] filter  ·  [q] quit
+[a] add  ·  [e] edit  ·  [d] delete  ·  [space] toggle  ·  [c] show comments  ·  [J/K] move  ·  [/] filter  ·  [q] quit
 ```
 
 ## Install
@@ -39,6 +39,9 @@ Root access is required to write to `/etc/hosts`.
 | `gg`           | Jump to top             |
 | `G`            | Jump to bottom          |
 | `space`        | Toggle enable / disable |
+| `c`            | Show / hide comments    |
+| `shift+j`      | Move entry down         |
+| `shift+k`      | Move entry up           |
 | `a` / `i`      | Add new entry           |
 | `e`            | Edit entry              |
 | `d` / `x`      | Delete entry            |
@@ -55,6 +58,8 @@ Root access is required to write to `/etc/hosts`.
 - **Filter** — live search by IP or hostname
 - **Conflict detection** — if `/etc/hosts` is modified externally while `hostage` is open, the write is aborted and a split-pane scratch view shows the pre-reload buffer so you can reconcile changes manually; new entries are marked `+` and removed-only entries are marked `~`
 - **Atomic writes** — changes are written via a temp file rename to avoid corruption
+- **Show comments** — `c` toggles whether `#` comments and blank lines render in the list (off by default). View-only — the cursor skips them
+- **Reorder** — `Shift+J` / `Shift+K` move the selected entry down / up. Comments stay anchored, preserving the file's annotated structure. Disabled while a filter is active
 
 ## Disabled entry format
 
