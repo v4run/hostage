@@ -262,7 +262,7 @@ func (m *Model) submitAddForm() (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) moveCurrentDown() {
-	if m.cursor >= len(m.filtered)-1 {
+	if len(m.filtered) == 0 || m.cursor >= len(m.filtered)-1 {
 		return
 	}
 	a := m.filtered[m.cursor]
@@ -276,7 +276,7 @@ func (m *Model) moveCurrentDown() {
 }
 
 func (m *Model) moveCurrentUp() {
-	if m.cursor <= 0 {
+	if len(m.filtered) == 0 || m.cursor <= 0 {
 		return
 	}
 	a := m.filtered[m.cursor-1]
