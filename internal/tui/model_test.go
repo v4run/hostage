@@ -178,3 +178,39 @@ func TestNavigationSkipsCommentsWhenVisible(t *testing.T) {
 		t.Errorf("expected cursor on entry b, got IP %s", m.LineIP(m.Cursor()))
 	}
 }
+
+func TestHelpBarIncludesCommentToggle(t *testing.T) {
+	m := tui.NewTestModel([]hosts.Line{
+		{Type: hosts.LineEntry, IP: "127.0.0.1", Hostnames: []string{"localhost"}},
+	})
+	m.SetWindowSizeForTest(120, 24)
+
+	view := m.ViewForTest()
+	if !strings.Contains(view, "[c]") {
+		t.Errorf("expected help bar to advertise [c], got:\n%s", view)
+	}
+	if !strings.Contains(view, "show comments") {
+		t.Errorf("expected help bar to mention %q with toggle off, got:\n%s", "show comments", view)
+	}
+
+	m.SetShowCommentsForTest(true)
+	view = m.ViewForTest()
+	if !strings.Contains(view, "hide comments") {
+		t.Errorf("expected help bar to mention %q with toggle on, got:\n%s", "hide comments", view)
+	}
+}
+
+func TestHelpBarIncludesReorderKeys(t *testing.T) {
+	m := tui.NewTestModel([]hosts.Line{
+		{Type: hosts.LineEntry, IP: "127.0.0.1", Hostnames: []string{"localhost"}},
+	})
+	m.SetWindowSizeForTest(120, 24)
+
+	view := m.ViewForTest()
+	if !strings.Contains(view, "[J/K]") {
+		t.Errorf("expected help bar to advertise [J/K], got:\n%s", view)
+	}
+	if !strings.Contains(view, "move") {
+		t.Errorf("expected help bar to mention move, got:\n%s", view)
+	}
+}

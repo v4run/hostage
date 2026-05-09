@@ -249,11 +249,17 @@ func (m *Model) viewMain() string {
 		if m.statusMsg != "" {
 			b.WriteString(styleStatusDot.Render("●") + " " + styleStatus.Render(m.statusMsg) + "\n")
 		} else {
+			commentsLabel := "show comments"
+			if m.showComments {
+				commentsLabel = "hide comments"
+			}
 			b.WriteString(helpBar(
 				helpItem("a", "add"),
 				helpItem("e", "edit"),
 				helpItem("d", "delete"),
 				helpItem("space", "toggle"),
+				helpItem("c", commentsLabel),
+				helpItem("J/K", "move"),
 				helpItem("/", "filter"),
 				helpItem("q", "quit"),
 			) + "\n")
