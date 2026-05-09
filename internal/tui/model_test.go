@@ -108,10 +108,8 @@ func TestDisplayedRowsHidesCommentsWhenFilterActive(t *testing.T) {
 	m.SetShowCommentsForTest(true)
 	m.SetFilter("local")
 	rows := m.DisplayedRowsForTest()
-	for _, r := range rows {
-		if r == 1 {
-			t.Errorf("expected comment row hidden during active filter, got rows %v", rows)
-		}
+	if !slices.Equal(rows, []int{0, 2}) {
+		t.Errorf("expected matching entries only, got %v", rows)
 	}
 }
 
