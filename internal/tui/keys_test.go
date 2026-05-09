@@ -247,3 +247,114 @@ func TestCommentToggleFlipsFlag(t *testing.T) {
 		t.Error("expected showComments to flip back to false after second c")
 	}
 }
+
+func TestMoveDownSwapsAdjacentEntries(t *testing.T) {
+	m := tui.NewTestModel([]hosts.Line{
+		{Type: hosts.LineEntry, IP: "1.1.1.1", Hostnames: []string{"a"}},
+		{Type: hosts.LineEntry, IP: "2.2.2.2", Hostnames: []string{"b"}},
+		{Type: hosts.LineEntry, IP: "3.3.3.3", Hostnames: []string{"c"}},
+	})
+	m.SetCursor(0)
+	m.PressKeyForTest("J")
+
+	if m.LineIP(0) != "2.2.2.2" || m.LineIP(1) != "1.1.1.1" || m.LineIP(2) != "3.3.3.3" {
+		t.Errorf("expected order [b a c], got [%s %s %s]", m.LineIP(0), m.LineIP(1), m.LineIP(2))
+	}
+	if m.Cursor() != 1 {
+		t.Errorf("expected cursor to follow moved entry to 1, got %d", m.Cursor())
+	}
+}
+
+func TestMoveUpSwapsAdjacentEntries(t *testing.T) {
+	m := tui.NewTestModel([]hosts.Line{
+		{Type: hosts.LineEntry, IP: "1.1.1.1", Hostnames: []string{"a"}},
+		{Type: hosts.LineEntry, IP: "2.2.2.2", Hostnames: []string{"b"}},
+		{Type: hosts.LineEntry, IP: "3.3.3.3", Hostnames: []string{"c"}},
+	})
+	m.SetCursor(1)
+	m.PressKeyForTest("K")
+
+	if m.LineIP(0) != "2.2.2.2" || m.LineIP(1) != "1.1.1.1" || m.LineIP(2) != "3.3.3.3" {
+		t.Errorf("expected order [b a c], got [%s %s %s]", m.LineIP(0), m.LineIP(1), m.LineIP(2))
+	}
+	if m.Cursor() != 0 {
+		t.Errorf("expected cursor to follow moved entry to 0, got %d", m.Cursor())
+	}
+}
+
+func TestMoveDownAtBottomNoOp(t *testing.T) {
+	m := tui.NewTestModel([]hosts.Line{
+		{Type: hosts.LineEntry, IP: "1.1.1.1", Hostnames: []string{"a"}},
+		{Type: hosts.LineEntry, IP: "2.2.2.2", Hostnames: []string{"b"}},
+	})
+	m.SetCursor(1)
+	m.PressKeyForTest("J")
+
+	if m.LineIP(0) != "1.1.1.1" || m.LineIP(1) != "2.2.2.2" {
+		t.Errorf("expected order unchanged, got [%s %s]", m.LineIP(0), m.LineIP(1))
+	}
+	if m.Cursor() != 1 {
+		t.Errorf("expected cursor to stay at 1, got %d", m.Cursor())
+	}
+}
+
+func TestMoveUpAtTopNoOp(t *testing.T) {
+	m := tui.NewTestModel([]hosts.Line{
+		{Type: hosts.LineEntry, IP: "1.1.1.1", Hostnames: []string{"a"}},
+		{Type: hosts.LineEntry, IP: "2.2.2.2", Hostnames: []string{"b"}},
+	})
+	m.SetCursor(0)
+	m.PressKeyForTest("K")
+
+	if m.LineIP(0) != "1.1.1.1" || m.LineIP(1) != "2.2.2.2" {
+		t.Errorf("expected order unchanged, got [%s %s]", m.LineIP(0), m.LineIP(1))
+	}
+	if m.Cursor() != 0 {
+		t.Errorf("expected cursor to stay at 0, got %d", m.Cursor())
+	}
+}
+
+func TestMoveLeapfrogsComments(t *testing.T) {
+	m := tui.NewTestModel([]hosts.Line{
+		{Type: hosts.LineEntry, IP: "1.1.1.1", Hostnames: []string{"a"}},
+		{Type: hosts.LineComment, Raw: "# divider\n"},
+		{Type: hosts.LineEntry, IP: "2.2.2.2", Hostnames: []string{"b"}},
+	})
+	m.SetCursor(0)
+	m.PressKeyForTest("J")
+
+	if m.LineAt(0).IP != "2.2.2.2" {
+		t.Errorf("expected lines[0] = b, got %s", m.LineAt(0).IP)
+	}
+	if m.LineAt(2).IP != "1.1.1.1" {
+		t.Errorf("expected lines[2] = a, got %s", m.LineAt(2).IP)
+	}
+	if got := m.LineAt(1); got.Type != hosts.LineComment || got.Raw != "# divider\n" {
+		t.Errorf("expected comment row preserved at index 1, got %+v", got)
+	}
+	if m.Cursor() != 1 {
+		t.Errorf("expected cursor at 1 (now pointing at moved entry a), got %d", m.Cursor())
+	}
+}
+
+func TestMoveDisabledDuringFilter(t *testing.T) {
+	m := tui.NewTestModel([]hosts.Line{
+		{Type: hosts.LineEntry, IP: "127.0.0.1", Hostnames: []string{"a"}},
+		{Type: hosts.LineEntry, IP: "127.0.0.2", Hostnames: []string{"b"}},
+	})
+	m.SetFilter("127")
+	m.SetCursor(0)
+	m.PressKeyForTest("J")
+
+	if m.LineIP(0) != "127.0.0.1" || m.LineIP(1) != "127.0.0.2" {
+		t.Errorf("expected order unchanged with active filter, got [%s %s]", m.LineIP(0), m.LineIP(1))
+	}
+	if m.Cursor() != 0 {
+		t.Errorf("expected cursor unchanged with active filter, got %d", m.Cursor())
+	}
+
+	m.PressKeyForTest("K")
+	if m.LineIP(0) != "127.0.0.1" || m.LineIP(1) != "127.0.0.2" {
+		t.Errorf("expected order unchanged after K with active filter, got [%s %s]", m.LineIP(0), m.LineIP(1))
+	}
+}

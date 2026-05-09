@@ -110,3 +110,5 @@ func (m *Model) SetWindowSizeForTest(w, h int) {
 func (m *Model) SetShowCommentsForTest(v bool) { m.showComments = v }
 
 func (m *Model) DisplayedRowsForTest() []int { return m.displayedRows() }
+
+func (m *Model) LineAt(idx int) hosts.Line { return m.lines[idx] }

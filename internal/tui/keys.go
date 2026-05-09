@@ -85,6 +85,16 @@ func (m *Model) handleBrowsing(key string) (tea.Model, tea.Cmd) {
 			m.mode = modeConfirmingDelete
 		}
 		m.lastKey = ""
+	case "J":
+		if m.filter == "" {
+			m.moveCurrentDown()
+		}
+		m.lastKey = ""
+	case "K":
+		if m.filter == "" {
+			m.moveCurrentUp()
+		}
+		m.lastKey = ""
 	case "c":
 		m.showComments = !m.showComments
 		m.lastKey = ""
@@ -249,6 +259,34 @@ func (m *Model) submitAddForm() (tea.Model, tea.Cmd) {
 	m.mode = modeBrowsing
 	m.resetAddForm()
 	return m, nil
+}
+
+func (m *Model) moveCurrentDown() {
+	if m.cursor >= len(m.filtered)-1 {
+		return
+	}
+	a := m.filtered[m.cursor]
+	b := m.filtered[m.cursor+1]
+	m.lines[a], m.lines[b] = m.lines[b], m.lines[a]
+	m.rebuildFiltered()
+	m.cursor++
+	if err := m.save(); err != nil {
+		m.statusMsg = "Error: " + err.Error()
+	}
+}
+
+func (m *Model) moveCurrentUp() {
+	if m.cursor <= 0 {
+		return
+	}
+	a := m.filtered[m.cursor-1]
+	b := m.filtered[m.cursor]
+	m.lines[a], m.lines[b] = m.lines[b], m.lines[a]
+	m.rebuildFiltered()
+	m.cursor--
+	if err := m.save(); err != nil {
+		m.statusMsg = "Error: " + err.Error()
+	}
 }
 
 func (m *Model) save() error {
