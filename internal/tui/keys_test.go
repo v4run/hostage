@@ -1,6 +1,7 @@
 package tui_test
 
 import (
+	"os"
 	"slices"
 	"testing"
 
@@ -335,6 +336,9 @@ func TestMoveLeapfrogsComments(t *testing.T) {
 	if m.Cursor() != 1 {
 		t.Errorf("expected cursor at 1 (now pointing at moved entry a), got %d", m.Cursor())
 	}
+	if m.LineIP(m.Cursor()) != "1.1.1.1" {
+		t.Errorf("expected cursor to follow moved entry a, got IP %s", m.LineIP(m.Cursor()))
+	}
 }
 
 func TestMoveDisabledDuringFilter(t *testing.T) {
@@ -356,5 +360,38 @@ func TestMoveDisabledDuringFilter(t *testing.T) {
 	m.PressKeyForTest("K")
 	if m.LineIP(0) != "127.0.0.1" || m.LineIP(1) != "127.0.0.2" {
 		t.Errorf("expected order unchanged after K with active filter, got [%s %s]", m.LineIP(0), m.LineIP(1))
+	}
+}
+
+func TestMovePersistsToFile(t *testing.T) {
+	tmp, err := os.CreateTemp("", "hostage-move-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmp.Name())
+	if _, err := tmp.WriteString("1.1.1.1 a\n2.2.2.2 b\n"); err != nil {
+		t.Fatal(err)
+	}
+	tmp.Close()
+
+	m, err := tui.New(tmp.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+	m.SetCursor(0)
+	m.PressKeyForTest("J")
+
+	raw, err := os.ReadFile(tmp.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+	var ips []string
+	for _, l := range hosts.Parse(string(raw)) {
+		if l.Type == hosts.LineEntry {
+			ips = append(ips, l.IP)
+		}
+	}
+	if !slices.Equal(ips, []string{"2.2.2.2", "1.1.1.1"}) {
+		t.Errorf("expected on-disk order [2.2.2.2 1.1.1.1], got %v", ips)
 	}
 }
