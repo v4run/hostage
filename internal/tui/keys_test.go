@@ -232,3 +232,18 @@ func TestEscCancelsEditForm(t *testing.T) {
 		t.Errorf("expected line unchanged on cancel, got %s %v", m.LineIP(0), m.LineHostnames(0))
 	}
 }
+
+func TestCommentToggleFlipsFlag(t *testing.T) {
+	m := tui.NewTestModel(nil)
+	if m.ShowComments() {
+		t.Fatal("expected showComments to default to false")
+	}
+	m.PressKeyForTest("c")
+	if !m.ShowComments() {
+		t.Error("expected showComments to flip to true after c")
+	}
+	m.PressKeyForTest("c")
+	if m.ShowComments() {
+		t.Error("expected showComments to flip back to false after second c")
+	}
+}

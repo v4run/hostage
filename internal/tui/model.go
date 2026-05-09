@@ -49,6 +49,7 @@ type Model struct {
 	width         int
 	height        int
 	lastKey       string
+	showComments  bool
 }
 
 func New(path string) (*Model, error) {

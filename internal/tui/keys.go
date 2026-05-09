@@ -85,6 +85,9 @@ func (m *Model) handleBrowsing(key string) (tea.Model, tea.Cmd) {
 			m.mode = modeConfirmingDelete
 		}
 		m.lastKey = ""
+	case "c":
+		m.showComments = !m.showComments
+		m.lastKey = ""
 	case "/":
 		m.mode = modeFiltering
 		m.filterInput.Focus()

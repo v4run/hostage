@@ -79,6 +79,7 @@ func (m *Model) AddErr() string { return m.addErr }
 
 func (m *Model) IsEditing() bool            { return m.mode == modeEditing }
 func (m *Model) IsBrowsing() bool           { return m.mode == modeBrowsing }
+func (m *Model) ShowComments() bool         { return m.showComments }
 func (m *Model) EditIndex() int             { return m.editIndex }
 func (m *Model) IPFieldValue() string       { return m.ipInput.Value() }
 func (m *Model) HostnameFieldValue() string { return m.hostnameInput.Value() }
