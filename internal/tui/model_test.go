@@ -1,6 +1,7 @@
 package tui_test
 
 import (
+	"slices"
 	"strings"
 	"testing"
 
@@ -70,5 +71,112 @@ func TestHelpBarIncludesEditKey(t *testing.T) {
 	}
 	if !strings.Contains(view, "edit") {
 		t.Errorf("expected help bar to mention edit, got:\n%s", view)
+	}
+}
+
+func TestDisplayedRowsExcludesCommentsByDefault(t *testing.T) {
+	m := tui.NewTestModel([]hosts.Line{
+		{Type: hosts.LineEntry, IP: "127.0.0.1", Hostnames: []string{"localhost"}},
+		{Type: hosts.LineComment, Raw: "# a note\n"},
+		{Type: hosts.LineEntry, IP: "192.168.1.1", Hostnames: []string{"site.local"}},
+	})
+	rows := m.DisplayedRowsForTest()
+	if !slices.Equal(rows, []int{0, 2}) {
+		t.Errorf("expected only entry indices, got %v", rows)
+	}
+}
+
+func TestDisplayedRowsIncludesCommentsWhenToggled(t *testing.T) {
+	m := tui.NewTestModel([]hosts.Line{
+		{Type: hosts.LineEntry, IP: "127.0.0.1", Hostnames: []string{"localhost"}},
+		{Type: hosts.LineComment, Raw: "# a note\n"},
+		{Type: hosts.LineEntry, IP: "192.168.1.1", Hostnames: []string{"site.local"}},
+	})
+	m.SetShowCommentsForTest(true)
+	rows := m.DisplayedRowsForTest()
+	if !slices.Equal(rows, []int{0, 1, 2}) {
+		t.Errorf("expected all rows displayed, got %v", rows)
+	}
+}
+
+func TestDisplayedRowsHidesCommentsWhenFilterActive(t *testing.T) {
+	m := tui.NewTestModel([]hosts.Line{
+		{Type: hosts.LineEntry, IP: "127.0.0.1", Hostnames: []string{"localhost"}},
+		{Type: hosts.LineComment, Raw: "# a note\n"},
+		{Type: hosts.LineEntry, IP: "192.168.1.1", Hostnames: []string{"site.local"}},
+	})
+	m.SetShowCommentsForTest(true)
+	m.SetFilter("local")
+	rows := m.DisplayedRowsForTest()
+	for _, r := range rows {
+		if r == 1 {
+			t.Errorf("expected comment row hidden during active filter, got rows %v", rows)
+		}
+	}
+}
+
+func TestViewRendersCommentTextWhenToggled(t *testing.T) {
+	m := tui.NewTestModel([]hosts.Line{
+		{Type: hosts.LineEntry, IP: "127.0.0.1", Hostnames: []string{"localhost"}},
+		{Type: hosts.LineComment, Raw: "# project alpha\n"},
+		{Type: hosts.LineEntry, IP: "192.168.1.1", Hostnames: []string{"site.local"}},
+	})
+	m.SetWindowSizeForTest(80, 24)
+
+	view := m.ViewForTest()
+	if strings.Contains(view, "project alpha") {
+		t.Fatalf("did not expect comment text with toggle off, got:\n%s", view)
+	}
+
+	m.SetShowCommentsForTest(true)
+	view = m.ViewForTest()
+	if !strings.Contains(view, "project alpha") {
+		t.Errorf("expected comment text in view with toggle on, got:\n%s", view)
+	}
+}
+
+func TestViewHidesCommentsDuringFilter(t *testing.T) {
+	m := tui.NewTestModel([]hosts.Line{
+		{Type: hosts.LineEntry, IP: "127.0.0.1", Hostnames: []string{"localhost"}},
+		{Type: hosts.LineComment, Raw: "# project alpha\n"},
+		{Type: hosts.LineEntry, IP: "192.168.1.1", Hostnames: []string{"site.local"}},
+	})
+	m.SetWindowSizeForTest(80, 24)
+	m.SetShowCommentsForTest(true)
+	m.SetFilter("127")
+
+	view := m.ViewForTest()
+	if strings.Contains(view, "project alpha") {
+		t.Errorf("expected comment hidden under active filter, got:\n%s", view)
+	}
+}
+
+func TestDisplayedRowsIncludesBlankLines(t *testing.T) {
+	m := tui.NewTestModel([]hosts.Line{
+		{Type: hosts.LineEntry, IP: "127.0.0.1", Hostnames: []string{"localhost"}},
+		{Type: hosts.LineComment, Raw: "\n"},
+		{Type: hosts.LineEntry, IP: "192.168.1.1", Hostnames: []string{"site.local"}},
+	})
+	m.SetShowCommentsForTest(true)
+	rows := m.DisplayedRowsForTest()
+	if !slices.Equal(rows, []int{0, 1, 2}) {
+		t.Errorf("expected blank line index included in displayed rows, got %v", rows)
+	}
+}
+
+func TestNavigationSkipsCommentsWhenVisible(t *testing.T) {
+	m := tui.NewTestModel([]hosts.Line{
+		{Type: hosts.LineEntry, IP: "127.0.0.1", Hostnames: []string{"a"}},
+		{Type: hosts.LineComment, Raw: "# divider\n"},
+		{Type: hosts.LineEntry, IP: "192.168.1.1", Hostnames: []string{"b"}},
+	})
+	m.SetShowCommentsForTest(true)
+	m.SetCursor(0)
+	m.PressKeyForTest("j")
+	if m.Cursor() != 1 {
+		t.Errorf("expected cursor at filtered index 1 after j (skipping comment), got %d", m.Cursor())
+	}
+	if m.LineIP(m.Cursor()) != "192.168.1.1" {
+		t.Errorf("expected cursor on entry b, got IP %s", m.LineIP(m.Cursor()))
 	}
 }

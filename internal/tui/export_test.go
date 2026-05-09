@@ -106,3 +106,7 @@ func (m *Model) SetWindowSizeForTest(w, h int) {
 	m.width = w
 	m.height = h
 }
+
+func (m *Model) SetShowCommentsForTest(v bool) { m.showComments = v }
+
+func (m *Model) DisplayedRowsForTest() []int { return m.displayedRows() }

@@ -120,6 +120,17 @@ func (m *Model) rebuildFiltered() {
 	}
 }
 
+func (m *Model) displayedRows() []int {
+	if !m.showComments || m.filter != "" {
+		return m.filtered
+	}
+	out := make([]int, 0, len(m.lines))
+	for i := range m.lines {
+		out = append(out, i)
+	}
+	return out
+}
+
 func (m *Model) visibleLines() []hosts.Line {
 	out := make([]hosts.Line, len(m.filtered))
 	for i, idx := range m.filtered {
@@ -156,13 +167,28 @@ func (m *Model) viewMain() string {
 	b.WriteString(styleRule.Render(strings.Repeat("─", m.width)) + "\n")
 
 	// --- List body.
+	disp := m.displayedRows()
 	listHeight := m.height - 7
 	if listHeight < 1 {
 		listHeight = 1
 	}
+
+	// Find the cursor's position within the displayed rows so the scroll
+	// math accounts for any comment rows interleaved above it.
+	cursorDisp := 0
+	if len(m.filtered) > 0 {
+		target := m.filtered[m.cursor]
+		for i, idx := range disp {
+			if idx == target {
+				cursorDisp = i
+				break
+			}
+		}
+	}
+
 	start := 0
-	if m.cursor >= listHeight {
-		start = m.cursor - listHeight + 1
+	if cursorDisp >= listHeight {
+		start = cursorDisp - listHeight + 1
 	}
 
 	if len(m.filtered) == 0 {
@@ -173,8 +199,16 @@ func (m *Model) viewMain() string {
 		b.WriteString(styleEntryDim.Render(msg) + "\n")
 	}
 
-	for i := start; i < len(m.filtered) && i < start+listHeight; i++ {
-		l := m.lines[m.filtered[i]]
+	for i := start; i < len(disp) && i < start+listHeight; i++ {
+		idx := disp[i]
+		l := m.lines[idx]
+
+		if l.Type == hosts.LineComment {
+			raw := strings.TrimRight(l.Raw, "\n")
+			b.WriteString("  " + styleEntryDim.Render(raw) + "\n")
+			continue
+		}
+
 		hostnames := strings.Join(l.Hostnames, " ")
 
 		var bullet, ip, host string
@@ -190,7 +224,7 @@ func (m *Model) viewMain() string {
 
 		content := bullet + " " + ip + " " + host
 
-		if i == m.cursor {
+		if len(m.filtered) > 0 && idx == m.filtered[m.cursor] {
 			bar := styleSelBar.Render("▌")
 			padN := m.width - 1 - lipgloss.Width(content)
 			if padN < 0 {
