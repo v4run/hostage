@@ -120,6 +120,14 @@ func (m *Model) rebuildFiltered() {
 	}
 }
 
+func (m *Model) halfPage() int {
+	listHeight := m.height - 7
+	if listHeight < 2 {
+		return 1
+	}
+	return listHeight / 2
+}
+
 func (m *Model) displayedRows() []int {
 	if !m.showComments || m.filter != "" {
 		return m.filtered

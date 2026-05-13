@@ -69,6 +69,15 @@ func (m *Model) handleBrowsing(key string) (tea.Model, tea.Cmd) {
 	case "G":
 		m.cursor = max(0, len(m.filtered)-1)
 		m.lastKey = ""
+	case "ctrl+d":
+		m.cursor = min(len(m.filtered)-1, m.cursor+m.halfPage())
+		if m.cursor < 0 {
+			m.cursor = 0
+		}
+		m.lastKey = ""
+	case "ctrl+u":
+		m.cursor = max(0, m.cursor-m.halfPage())
+		m.lastKey = ""
 	case " ":
 		m.toggleCurrent()
 		m.lastKey = ""

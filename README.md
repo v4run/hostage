@@ -38,6 +38,8 @@ Root access is required to write to `/etc/hosts`.
 | `↓` / `j`      | Move down               |
 | `gg`           | Jump to top             |
 | `G`            | Jump to bottom          |
+| `ctrl+d`       | Scroll down half page   |
+| `ctrl+u`       | Scroll up half page     |
 | `space`        | Toggle enable / disable |
 | `c`            | Show / hide comments    |
 | `shift+j`      | Move entry down         |
