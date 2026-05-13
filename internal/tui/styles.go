@@ -11,7 +11,6 @@ type Palette struct {
 	Disabled lipgloss.TerminalColor
 	Muted    lipgloss.TerminalColor
 	Fg       lipgloss.TerminalColor
-	SelBg    lipgloss.TerminalColor
 	Border   lipgloss.TerminalColor
 	Warn     lipgloss.TerminalColor
 	Danger   lipgloss.TerminalColor
@@ -25,7 +24,6 @@ var paletteDefault = Palette{
 	Disabled: lipgloss.Color("#52525B"),
 	Muted:    lipgloss.Color("#A1A1AA"),
 	Fg:       lipgloss.Color("#E4E4E7"),
-	SelBg:    lipgloss.Color("#27272A"),
 	Border:   lipgloss.Color("#3F3F46"),
 	Warn:     lipgloss.Color("#FBBF24"),
 	Danger:   lipgloss.Color("#F87171"),
@@ -39,7 +37,6 @@ var paletteTerminal = Palette{
 	Disabled: lipgloss.Color("8"),  // bright black
 	Muted:    lipgloss.Color("7"),  // white
 	Fg:       lipgloss.NoColor{},
-	SelBg:    lipgloss.Color("8"),
 	Border:   lipgloss.Color("8"),
 	Warn:     lipgloss.Color("11"), // bright yellow
 	Danger:   lipgloss.Color("9"),  // bright red
@@ -54,8 +51,11 @@ var (
 	styleEntryIP             lipgloss.Style
 	styleEntryHost           lipgloss.Style
 	styleEntryDim            lipgloss.Style
-	styleSelBg               lipgloss.Style
-	styleSelBar              lipgloss.Style
+	styleSelGutter           lipgloss.Style
+	styleEnabledSel          lipgloss.Style
+	styleDisabledSel         lipgloss.Style
+	styleEntryIPSel          lipgloss.Style
+	styleEntryHostSel        lipgloss.Style
 	styleFilterLabel         lipgloss.Style
 	styleFilterGlyph         lipgloss.Style
 	styleRule                lipgloss.Style
@@ -104,8 +104,14 @@ func applyPalette(p Palette) {
 	styleEntryHost = lipgloss.NewStyle().Foreground(p.Muted)
 	styleEntryDim = lipgloss.NewStyle().Foreground(p.Disabled).Italic(true)
 
-	styleSelBg = lipgloss.NewStyle().Background(p.SelBg)
-	styleSelBar = lipgloss.NewStyle().Foreground(p.Accent).Background(p.SelBg).Bold(true)
+	// Selection: a bold accent gutter glyph plus bold on every cell of the
+	// focused row. No background fill — the design relies on foreground +
+	// bold so it survives across terminal themes and ANSI fallbacks.
+	styleSelGutter = lipgloss.NewStyle().Foreground(p.Accent).Bold(true)
+	styleEnabledSel = styleEnabled.Bold(true)
+	styleDisabledSel = styleDisabled.Bold(true)
+	styleEntryIPSel = styleEntryIP.Bold(true)
+	styleEntryHostSel = styleEntryHost.Bold(true)
 
 	styleFilterLabel = lipgloss.NewStyle().Foreground(p.Muted)
 	styleFilterGlyph = lipgloss.NewStyle().Foreground(p.Accent)

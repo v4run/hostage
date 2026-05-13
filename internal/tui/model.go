@@ -227,31 +227,37 @@ func (m *Model) viewMain() string {
 			continue
 		}
 
+		selected := len(m.filtered) > 0 && idx == m.filtered[m.cursor]
+		disabled := l.Type == hosts.LineDisabled
 		hostnames := strings.Join(l.Hostnames, " ")
+		ipText := fmt.Sprintf("%-16s", l.IP)
 
 		var bullet, ip, host string
-		if l.Type == hosts.LineDisabled {
+		switch {
+		case disabled && selected:
+			bullet = styleDisabledSel.Render("○")
+			ip = styleDisabledSel.Render(ipText)
+			host = styleDisabledSel.Render(hostnames)
+		case disabled:
 			bullet = styleDisabled.Render("○")
-			ip = styleDisabled.Render(fmt.Sprintf("%-16s", l.IP))
+			ip = styleDisabled.Render(ipText)
 			host = styleDisabled.Render(hostnames)
-		} else {
+		case selected:
+			bullet = styleEnabledSel.Render("●")
+			ip = styleEntryIPSel.Render(ipText)
+			host = styleEntryHostSel.Render(hostnames)
+		default:
 			bullet = styleEnabled.Render("●")
-			ip = styleEntryIP.Render(fmt.Sprintf("%-16s", l.IP))
+			ip = styleEntryIP.Render(ipText)
 			host = styleEntryHost.Render(hostnames)
 		}
 
-		content := bullet + " " + ip + " " + host
-
-		if len(m.filtered) > 0 && idx == m.filtered[m.cursor] {
-			bar := styleSelBar.Render("▌")
-			padN := m.width - 1 - lipgloss.Width(content)
-			if padN < 0 {
-				padN = 0
-			}
-			b.WriteString(bar + styleSelBg.Render(content+strings.Repeat(" ", padN)) + "\n")
-		} else {
-			b.WriteString(" " + content + "\n")
+		gutter := "  "
+		if selected {
+			gutter = styleSelGutter.Render("▌") + " "
 		}
+
+		b.WriteString(gutter + bullet + " " + ip + " " + host + "\n")
 	}
 
 	// --- Bottom rule.
