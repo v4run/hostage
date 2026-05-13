@@ -52,8 +52,6 @@ var (
 	styleEntryHost           lipgloss.Style
 	styleEntryDim            lipgloss.Style
 	styleSelGutter           lipgloss.Style
-	styleEnabledSel          lipgloss.Style
-	styleDisabledSel         lipgloss.Style
 	styleEntryIPSel          lipgloss.Style
 	styleEntryHostSel        lipgloss.Style
 	styleFilterLabel         lipgloss.Style
@@ -104,14 +102,13 @@ func applyPalette(p Palette) {
 	styleEntryHost = lipgloss.NewStyle().Foreground(p.Muted)
 	styleEntryDim = lipgloss.NewStyle().Foreground(p.Disabled).Italic(true)
 
-	// Selection: a bold accent gutter glyph plus bold on every cell of the
-	// focused row. No background fill — the design relies on foreground +
-	// bold so it survives across terminal themes and ANSI fallbacks.
+	// Selection: accent gutter + IP/hostname recolored to accent. The
+	// bullet keeps its enabled/disabled color so state is still readable
+	// on the focused row; disabled rows stay dim and the gutter is the
+	// sole focus signal for them.
 	styleSelGutter = lipgloss.NewStyle().Foreground(p.Accent).Bold(true)
-	styleEnabledSel = styleEnabled.Bold(true)
-	styleDisabledSel = styleDisabled.Bold(true)
-	styleEntryIPSel = styleEntryIP.Bold(true)
-	styleEntryHostSel = styleEntryHost.Bold(true)
+	styleEntryIPSel = lipgloss.NewStyle().Foreground(p.Accent).Bold(true)
+	styleEntryHostSel = lipgloss.NewStyle().Foreground(p.Accent)
 
 	styleFilterLabel = lipgloss.NewStyle().Foreground(p.Muted)
 	styleFilterGlyph = lipgloss.NewStyle().Foreground(p.Accent)

@@ -234,16 +234,14 @@ func (m *Model) viewMain() string {
 
 		var bullet, ip, host string
 		switch {
-		case disabled && selected:
-			bullet = styleDisabledSel.Render("○")
-			ip = styleDisabledSel.Render(ipText)
-			host = styleDisabledSel.Render(hostnames)
 		case disabled:
+			// Disabled rows stay dim whether selected or not — the gutter
+			// is the only focus cue. Promoting them would erase state.
 			bullet = styleDisabled.Render("○")
 			ip = styleDisabled.Render(ipText)
 			host = styleDisabled.Render(hostnames)
 		case selected:
-			bullet = styleEnabledSel.Render("●")
+			bullet = styleEnabled.Render("●")
 			ip = styleEntryIPSel.Render(ipText)
 			host = styleEntryHostSel.Render(hostnames)
 		default:
@@ -256,7 +254,6 @@ func (m *Model) viewMain() string {
 		if selected {
 			gutter = styleSelGutter.Render("▌") + " "
 		}
-
 		b.WriteString(gutter + bullet + " " + ip + " " + host + "\n")
 	}
 
