@@ -11,6 +11,7 @@ type Palette struct {
 	Disabled lipgloss.TerminalColor
 	Muted    lipgloss.TerminalColor
 	Fg       lipgloss.TerminalColor
+	SelBg    lipgloss.TerminalColor
 	Border   lipgloss.TerminalColor
 	Warn     lipgloss.TerminalColor
 	Danger   lipgloss.TerminalColor
@@ -24,6 +25,7 @@ var paletteDefault = Palette{
 	Disabled: lipgloss.Color("#52525B"),
 	Muted:    lipgloss.Color("#A1A1AA"),
 	Fg:       lipgloss.Color("#E4E4E7"),
+	SelBg:    lipgloss.Color("#3F3F46"), // zinc-700 — visibly distinct from typical dark terminal bg
 	Border:   lipgloss.Color("#3F3F46"),
 	Warn:     lipgloss.Color("#FBBF24"),
 	Danger:   lipgloss.Color("#F87171"),
@@ -37,6 +39,7 @@ var paletteTerminal = Palette{
 	Disabled: lipgloss.Color("8"),  // bright black
 	Muted:    lipgloss.Color("7"),  // white
 	Fg:       lipgloss.NoColor{},
+	SelBg:    lipgloss.Color("0"), // black — typically distinct from terminal default bg
 	Border:   lipgloss.Color("8"),
 	Warn:     lipgloss.Color("11"), // bright yellow
 	Danger:   lipgloss.Color("9"),  // bright red
@@ -51,7 +54,10 @@ var (
 	styleEntryIP             lipgloss.Style
 	styleEntryHost           lipgloss.Style
 	styleEntryDim            lipgloss.Style
+	styleSelBg               lipgloss.Style
 	styleSelGutter           lipgloss.Style
+	styleEnabledSel          lipgloss.Style
+	styleDisabledSel         lipgloss.Style
 	styleEntryIPSel          lipgloss.Style
 	styleEntryHostSel        lipgloss.Style
 	styleFilterLabel         lipgloss.Style
@@ -106,9 +112,15 @@ func applyPalette(p Palette) {
 	// bullet keeps its enabled/disabled color so state is still readable
 	// on the focused row; disabled rows stay dim and the gutter is the
 	// sole focus signal for them.
-	styleSelGutter = lipgloss.NewStyle().Foreground(p.Accent).Bold(true)
-	styleEntryIPSel = lipgloss.NewStyle().Foreground(p.Accent).Bold(true)
-	styleEntryHostSel = lipgloss.NewStyle().Foreground(p.Accent)
+	// Selection: every cell of the focused row carries Background(SelBg),
+	// and the spaces between cells are rendered through styleSelBg so the
+	// fill is unbroken across the whole row.
+	styleSelBg = lipgloss.NewStyle().Background(p.SelBg)
+	styleSelGutter = lipgloss.NewStyle().Foreground(p.Accent).Background(p.SelBg).Bold(true)
+	styleEnabledSel = lipgloss.NewStyle().Foreground(p.Enabled).Background(p.SelBg)
+	styleDisabledSel = lipgloss.NewStyle().Foreground(p.Disabled).Background(p.SelBg)
+	styleEntryIPSel = lipgloss.NewStyle().Foreground(p.Accent).Background(p.SelBg).Bold(true)
+	styleEntryHostSel = lipgloss.NewStyle().Foreground(p.Accent).Background(p.SelBg)
 
 	styleFilterLabel = lipgloss.NewStyle().Foreground(p.Muted)
 	styleFilterGlyph = lipgloss.NewStyle().Foreground(p.Accent)

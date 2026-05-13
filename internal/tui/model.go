@@ -232,29 +232,40 @@ func (m *Model) viewMain() string {
 		hostnames := strings.Join(l.Hostnames, " ")
 		ipText := fmt.Sprintf("%-16s", l.IP)
 
-		var bullet, ip, host string
-		switch {
-		case disabled:
-			// Disabled rows stay dim whether selected or not — the gutter
-			// is the only focus cue. Promoting them would erase state.
-			bullet = styleDisabled.Render("○")
-			ip = styleDisabled.Render(ipText)
-			host = styleDisabled.Render(hostnames)
-		case selected:
-			bullet = styleEnabled.Render("●")
-			ip = styleEntryIPSel.Render(ipText)
-			host = styleEntryHostSel.Render(hostnames)
-		default:
-			bullet = styleEnabled.Render("●")
-			ip = styleEntryIP.Render(ipText)
-			host = styleEntryHost.Render(hostnames)
-		}
-
-		gutter := "  "
 		if selected {
-			gutter = styleSelGutter.Render("▌") + " "
+			var bullet, ip, host string
+			if disabled {
+				bullet = styleDisabledSel.Render("◌")
+				ip = styleDisabledSel.Render(ipText)
+				host = styleDisabledSel.Render(hostnames)
+			} else {
+				bullet = styleEnabledSel.Render("◉")
+				ip = styleEntryIPSel.Render(ipText)
+				host = styleEntryHostSel.Render(hostnames)
+			}
+			// Compose the row as: [accent gutter][space bg][bullet][space bg][ip][space bg][host][pad bg]
+			// Every gap is rendered through styleSelBg so the fill is unbroken.
+			gutter := styleSelGutter.Render("❯")
+			sp := styleSelBg.Render(" ")
+			row := gutter + sp + bullet + sp + ip + sp + host
+			padN := m.width - lipgloss.Width(row)
+			if padN < 0 {
+				padN = 0
+			}
+			b.WriteString(row + styleSelBg.Render(strings.Repeat(" ", padN)) + "\n")
+		} else {
+			var bullet, ip, host string
+			if disabled {
+				bullet = styleDisabled.Render("○")
+				ip = styleDisabled.Render(ipText)
+				host = styleDisabled.Render(hostnames)
+			} else {
+				bullet = styleEnabled.Render("●")
+				ip = styleEntryIP.Render(ipText)
+				host = styleEntryHost.Render(hostnames)
+			}
+			b.WriteString("  " + bullet + " " + ip + " " + host + "\n")
 		}
-		b.WriteString(gutter + bullet + " " + ip + " " + host + "\n")
 	}
 
 	// --- Bottom rule.
