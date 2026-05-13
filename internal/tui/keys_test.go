@@ -363,6 +363,48 @@ func TestMoveDisabledDuringFilter(t *testing.T) {
 	}
 }
 
+func TestViewportStaysFixedWhenCursorMovesWithinWindow(t *testing.T) {
+	lines := make([]hosts.Line, 10)
+	for i := range lines {
+		lines[i] = hosts.Line{Type: hosts.LineEntry, IP: "10.0.0.1", Hostnames: []string{"h"}}
+	}
+	m := tui.NewTestModel(lines)
+	m.SetWindowSizeForTest(80, 10) // listHeight = height - 7 = 3
+
+	m.PressKeyForTest("G")
+	_ = m.ViewForTest()
+	startAfterG := m.ViewportStart()
+	if startAfterG != 7 {
+		t.Fatalf("expected viewportStart=7 after G, got %d", startAfterG)
+	}
+
+	m.PressKeyForTest("k")
+	_ = m.ViewForTest()
+	if m.ViewportStart() != startAfterG {
+		t.Errorf("expected viewport to stay at %d when cursor moves up within window, got %d",
+			startAfterG, m.ViewportStart())
+	}
+}
+
+func TestViewportScrollsWhenCursorLeavesWindow(t *testing.T) {
+	lines := make([]hosts.Line, 10)
+	for i := range lines {
+		lines[i] = hosts.Line{Type: hosts.LineEntry, IP: "10.0.0.1", Hostnames: []string{"h"}}
+	}
+	m := tui.NewTestModel(lines)
+	m.SetWindowSizeForTest(80, 10) // listHeight = 3
+
+	m.PressKeyForTest("G")
+	_ = m.ViewForTest()
+	for i := 0; i < 3; i++ {
+		m.PressKeyForTest("k")
+		_ = m.ViewForTest()
+	}
+	if m.ViewportStart() != 6 {
+		t.Errorf("expected viewportStart=6 after cursor leaves window top, got %d", m.ViewportStart())
+	}
+}
+
 func TestMovePersistsToFile(t *testing.T) {
 	tmp, err := os.CreateTemp("", "hostage-move-*")
 	if err != nil {
