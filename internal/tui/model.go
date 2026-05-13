@@ -50,6 +50,7 @@ type Model struct {
 	height        int
 	lastKey       string
 	showComments  bool
+	viewportStart int
 }
 
 func New(path string) (*Model, error) {
@@ -194,10 +195,19 @@ func (m *Model) viewMain() string {
 		}
 	}
 
-	start := 0
-	if cursorDisp >= listHeight {
-		start = cursorDisp - listHeight + 1
+	if m.viewportStart > cursorDisp {
+		m.viewportStart = cursorDisp
 	}
+	if cursorDisp >= m.viewportStart+listHeight {
+		m.viewportStart = cursorDisp - listHeight + 1
+	}
+	if m.viewportStart > len(disp)-listHeight {
+		m.viewportStart = len(disp) - listHeight
+	}
+	if m.viewportStart < 0 {
+		m.viewportStart = 0
+	}
+	start := m.viewportStart
 
 	if len(m.filtered) == 0 {
 		msg := "  No entries in hosts file"
