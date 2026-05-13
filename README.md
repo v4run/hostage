@@ -30,6 +30,13 @@ sudo hostage
 
 Root access is required to write to `/etc/hosts`.
 
+Pass `--theme=terminal` to inherit the terminal's ANSI palette instead of the
+built-in dark theme:
+
+```bash
+sudo hostage --theme=terminal
+```
+
 ## Key bindings
 
 | Key            | Action                  |

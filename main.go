@@ -12,11 +12,13 @@ import (
 
 func main() {
 	ver := flag.Bool("version", false, "print version and exit")
+	theme := flag.String("theme", "default", "color theme: 'default' or 'terminal' (inherit terminal palette)")
 	flag.Parse()
 	if *ver {
 		fmt.Println("hostage", version.Version)
 		return
 	}
+	tui.SetTheme(*theme)
 
 	m, err := tui.New("/etc/hosts")
 	if err != nil {
