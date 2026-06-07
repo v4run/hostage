@@ -51,6 +51,7 @@ sudo hostage --theme=terminal
 | `y`            | Yank current entry      |
 | `p` / `P`      | Paste below / above     |
 | `c`            | Show / hide comments    |
+| `r`            | Toggle raw view         |
 | `shift+j`      | Move entry down         |
 | `shift+k`      | Move entry up           |
 | `a` / `i`      | Add new entry           |

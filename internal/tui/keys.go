@@ -107,6 +107,9 @@ func (m *Model) handleBrowsing(key string) (tea.Model, tea.Cmd) {
 	case "c":
 		m.showComments = !m.showComments
 		m.lastKey = ""
+	case "r":
+		m.rawView = !m.rawView
+		m.lastKey = ""
 	case "y":
 		m.yankCurrent()
 		m.lastKey = ""
@@ -122,6 +125,11 @@ func (m *Model) handleBrowsing(key string) (tea.Model, tea.Cmd) {
 	case "/":
 		m.mode = modeFiltering
 		m.filterInput.Focus()
+		m.lastKey = ""
+	case "esc":
+		if m.rawView {
+			m.rawView = false
+		}
 		m.lastKey = ""
 	default:
 		m.lastKey = ""

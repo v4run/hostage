@@ -52,6 +52,7 @@ type Model struct {
 	showComments  bool
 	viewportStart int
 	yank          *hosts.Line
+	rawView       bool
 }
 
 func New(path string) (*Model, error) {
@@ -233,6 +234,15 @@ func (m *Model) viewMain() string {
 		hostnames := strings.Join(l.Hostnames, " ")
 		ipText := fmt.Sprintf("%-16s", l.IP)
 
+		if m.rawView {
+			prefix := ""
+			if disabled {
+				prefix = "# "
+			}
+			b.WriteString(prefix + l.IP + " " + hostnames + "\n")
+			continue
+		}
+
 		if selected {
 			var bullet, ip, host string
 			if disabled {
@@ -286,12 +296,17 @@ func (m *Model) viewMain() string {
 			if m.showComments {
 				commentsLabel = "hide comments"
 			}
+			rawLabel := "raw view"
+			if m.rawView {
+				rawLabel = "styled view"
+			}
 			b.WriteString(helpBar(
 				helpItem("a", "add"),
 				helpItem("e", "edit"),
 				helpItem("d", "delete"),
 				helpItem("space", "toggle"),
 				helpItem("c", commentsLabel),
+				helpItem("r", rawLabel),
 				helpItem("y/p", "yank/paste"),
 				helpItem("J/K", "move"),
 				helpItem("/", "filter"),
