@@ -48,6 +48,8 @@ sudo hostage --theme=terminal
 | `ctrl+d`       | Scroll down half page   |
 | `ctrl+u`       | Scroll up half page     |
 | `space`        | Toggle enable / disable |
+| `y`            | Yank current entry      |
+| `p` / `P`      | Paste below / above     |
 | `c`            | Show / hide comments    |
 | `shift+j`      | Move entry down         |
 | `shift+k`      | Move entry up           |

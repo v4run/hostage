@@ -107,6 +107,18 @@ func (m *Model) handleBrowsing(key string) (tea.Model, tea.Cmd) {
 	case "c":
 		m.showComments = !m.showComments
 		m.lastKey = ""
+	case "y":
+		m.yankCurrent()
+		m.lastKey = ""
+		return m, nil
+	case "p":
+		m.pasteBelow()
+		m.lastKey = ""
+		return m, nil
+	case "P":
+		m.pasteAbove()
+		m.lastKey = ""
+		return m, nil
 	case "/":
 		m.mode = modeFiltering
 		m.filterInput.Focus()
@@ -268,6 +280,62 @@ func (m *Model) submitAddForm() (tea.Model, tea.Cmd) {
 	m.mode = modeBrowsing
 	m.resetAddForm()
 	return m, nil
+}
+
+func (m *Model) yankCurrent() {
+	if len(m.filtered) == 0 {
+		return
+	}
+	l := m.lines[m.filtered[m.cursor]]
+	cp := hosts.Line{
+		Type:      l.Type,
+		IP:        l.IP,
+		Hostnames: append([]string(nil), l.Hostnames...),
+	}
+	m.yank = &cp
+	m.statusMsg = "Yanked " + cp.IP + " " + strings.Join(cp.Hostnames, " ")
+}
+
+func (m *Model) pasteBelow() {
+	m.pasteAt(1)
+}
+
+func (m *Model) pasteAbove() {
+	m.pasteAt(0)
+}
+
+func (m *Model) pasteAt(offset int) {
+	if m.yank == nil {
+		m.statusMsg = "Nothing to paste"
+		return
+	}
+	cp := hosts.Line{
+		Type:      m.yank.Type,
+		IP:        m.yank.IP,
+		Hostnames: append([]string(nil), m.yank.Hostnames...),
+	}
+	var insertAt int
+	if len(m.filtered) == 0 {
+		insertAt = len(m.lines)
+	} else {
+		insertAt = m.filtered[m.cursor] + offset
+	}
+	if insertAt > len(m.lines) {
+		insertAt = len(m.lines)
+	}
+	m.lines = append(m.lines, hosts.Line{})
+	copy(m.lines[insertAt+1:], m.lines[insertAt:])
+	m.lines[insertAt] = cp
+	m.rebuildFiltered()
+	for i, idx := range m.filtered {
+		if idx == insertAt {
+			m.cursor = i
+			break
+		}
+	}
+	if err := m.save(); err != nil {
+		m.statusMsg = "Error: " + err.Error()
+	}
 }
 
 func (m *Model) moveCurrentDown() {

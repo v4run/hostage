@@ -51,6 +51,7 @@ type Model struct {
 	lastKey       string
 	showComments  bool
 	viewportStart int
+	yank          *hosts.Line
 }
 
 func New(path string) (*Model, error) {
@@ -291,6 +292,7 @@ func (m *Model) viewMain() string {
 				helpItem("d", "delete"),
 				helpItem("space", "toggle"),
 				helpItem("c", commentsLabel),
+				helpItem("y/p", "yank/paste"),
 				helpItem("J/K", "move"),
 				helpItem("/", "filter"),
 				helpItem("q", "quit"),
