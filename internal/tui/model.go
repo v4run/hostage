@@ -321,6 +321,14 @@ func (m *Model) viewAddForm() string {
 		hnCaret = styleFormCaret.Render("▸ ")
 	}
 
+	// Card chrome: border(2) + padding(2) + caret(2) + label(9) = 15 cells.
+	inputWidth := m.width - 2 - 15
+	if inputWidth < 10 {
+		inputWidth = 10
+	}
+	m.ipInput.Width = inputWidth
+	m.hostnameInput.Width = inputWidth
+
 	b.WriteString(ipCaret + styleFormLabel.Render("IP       ") + m.ipInput.View() + "\n")
 	b.WriteString(hnCaret + styleFormLabel.Render("Hostname ") + m.hostnameInput.View() + "\n")
 
